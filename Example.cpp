@@ -8,13 +8,13 @@ int main(int argc, char* argv[])
 	canvas.create(1024, 768, "Example");
 	bool running = true;
 	MinimalBase::Image image;
-	image.load("A.png");
+	image.load("Resources/A.png");
 	int planeX = 300;
 	int planeY = 300;
 	MinimalBase::SoundManager sounds;
-	sounds.loadMusic("music.wav");
+	sounds.loadMusic("Resources/music.wav");
 	sounds.playMusic();
-	sounds.load("explosion.wav");
+	sounds.load("Resources/explosion.wav");
 	while (running)
 	{
 		canvas.checkInput();
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 		}
 		if (planeX > (canvas.width - image.width) || planeX < 0 || planeY >(canvas.height - image.height) || planeY < 0)
 		{
-			sounds.play("explosion.wav");
+			sounds.play("Resources/explosion.wav");
 			planeX = (canvas.width / 2) - (image.width / 2);
 			planeY = (canvas.height / 2) - (image.height / 2);
 		}
