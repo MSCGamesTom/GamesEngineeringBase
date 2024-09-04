@@ -1,17 +1,17 @@
 
 
-#include "MinimalBase.h"
+#include "GamesEngineeringBase.h"
 
 int main(int argc, char* argv[])
 {
-	MinimalBase::Window canvas;
+	GamesEngineeringBase::Window canvas;
 	canvas.create(1024, 768, "Example");
 	bool running = true;
-	MinimalBase::Image image;
+	GamesEngineeringBase::Image image;
 	image.load("Resources/A.png");
 	int planeX = 300;
 	int planeY = 300;
-	MinimalBase::SoundManager sounds;
+	GamesEngineeringBase::SoundManager sounds;
 	sounds.loadMusic("Resources/music.wav");
 	sounds.playMusic();
 	sounds.load("Resources/explosion.wav");

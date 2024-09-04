@@ -9,12 +9,15 @@
 #include <wincodec.h>
 #include <wincodecsdk.h>
 #include <atlbase.h>
+#include <Xinput.h>
+#include <math.h>
 
 #pragma comment(lib, "D3D11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
 #pragma comment(lib, "WindowsCodecs.lib")
+#pragma comment(lib, "xinput.lib")
 
-namespace MinimalBase
+namespace GamesEngineeringBase
 {
 
 
@@ -649,7 +652,7 @@ public:
 		{
 			unsigned char *strideData = new unsigned char[stride * height];
 			frame->CopyPixels(0, stride, width * height * channels, strideData);
-			for (int i = 0; i < height; i++)
+			for (int i = 0; i < (int)height; i++)
 			{
 				memcpy(&data[i * width * channels], &strideData[i * stride], width * channels * sizeof(unsigned char));
 			}
@@ -657,7 +660,7 @@ public:
 		}
 		if (isRGB == 0)
 		{
-			for (int i = 0; i < (width * height); i++)
+			for (int i = 0; i < (int)(width * height); i++)
 			{
 				unsigned char p = data[i * channels];
 				data[i * channels] = data[(i * channels) + 2];
@@ -697,6 +700,141 @@ public:
 	~Image()
 	{
 		free();
+	}
+};
+
+class XBoxController
+{
+public:
+	int ID;
+	XINPUT_STATE state;
+	XBoxController() { ID = -1; }
+	void activate(int _ID) { ID = _ID; }
+	void deactivate() { ID = -1; }
+	float lX;
+	float lY;
+	float rX;
+	float rY;
+	float lT;
+	float rT;
+	void update()
+	{
+		memset(&state, 0, sizeof(XINPUT_STATE));
+		XInputGetState(ID, &state);
+		lX = state.Gamepad.sThumbLX;
+		lY = state.Gamepad.sThumbLY;
+		float lLen = sqrtf((lX * lX) + (lY * lY));
+		lX = lX / lLen;
+		lY = lY / lLen;
+		if (lLen > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
+		{
+			if (lLen > 32767)
+			{
+				lLen = 32767;
+			}
+			lLen = lLen - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE;
+			lLen = lLen / (32767 - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+		} else
+		{
+			lLen = 0;
+		}
+		lX = lX * lLen;
+		lY = lY * lLen;
+		rX = state.Gamepad.sThumbRX;
+		rY = state.Gamepad.sThumbRY;
+		float rLen = sqrtf((rX * rX) + (rY * rY));
+		rX = rX / rLen;
+		rY = rY / rLen;
+		if (rLen > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE)
+		{
+			if (rLen > 32767)
+			{
+				rLen = 32767;
+			}
+			rLen = rLen - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE;
+			rLen = rLen / (32767 - XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+		} else
+		{
+			rLen = 0;
+		}
+		rX = rX * rLen;
+		rY = rY * rLen;
+		rT = (float)(state.Gamepad.bRightTrigger - XINPUT_GAMEPAD_TRIGGER_THRESHOLD) / (float)(255 - XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+		lT = (float)(state.Gamepad.bLeftTrigger - XINPUT_GAMEPAD_TRIGGER_THRESHOLD) / (float)(255 - XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+	}
+	bool upPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) > 0); }
+	bool downPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) > 0); }
+	bool leftPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) > 0); }
+	bool rightPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) > 0); }
+	bool startPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_START) > 0); }
+	bool backPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) > 0); }
+	bool lThumbPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB) > 0); }
+	bool rThumbPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) > 0); }
+	bool lShoulderPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) > 0); }
+	bool rShoulderPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) > 0); }
+	bool APressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_A) > 0); }
+	bool BPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_B) > 0); }
+	bool XPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_X) > 0); }
+	bool YPressed() { return ((state.Gamepad.wButtons & XINPUT_GAMEPAD_Y) > 0); }
+	void vibrate(float l, float r)
+	{
+		unsigned short lV = min((unsigned short)(l * 65535), 65535);
+		unsigned short rV = min((unsigned short)(r * 65535), 65535);
+		XINPUT_VIBRATION vibration;
+		memset(&vibration, 0, sizeof(XINPUT_VIBRATION));
+		vibration.wLeftMotorSpeed = lV;
+		vibration.wRightMotorSpeed = rV;
+		XInputSetState(ID, &vibration);
+	}
+};
+
+class XBoxControllers
+{
+public:
+	XBoxController controllers[XUSER_MAX_COUNT];
+	XBoxControllers()
+	{
+		probeControllers();
+	}
+	XBoxController getPlayerController(int index)
+	{
+		return controllers[index];
+	}
+	XBoxController getFirstPlayerController()
+	{
+		for (int i = 0; i < XUSER_MAX_COUNT; i++)
+		{
+			if (controllers[i].ID > -1)
+			{
+				return controllers[i];
+			}
+		}
+	}
+	bool hasController()
+	{
+		for (int i = 0; i < XUSER_MAX_COUNT; i++)
+		{
+			if (controllers[i].ID > -1)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	void probeControllers()
+	{
+		for (int i = 0; i < XUSER_MAX_COUNT; i++)
+		{
+			XINPUT_STATE state;
+			memset(&state, 0, sizeof(XINPUT_STATE));
+			if (XInputGetState(i, &state) == 0)
+			{
+				controllers[i].activate(i);
+			} else
+			{
+				controllers[i].deactivate();
+			}
+		}
 	}
 };
 
