@@ -1,3 +1,27 @@
+/*
+MIT License
+
+Copyright (c) 2024 MSc Games Engineering Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 #pragma once
 
 #include <Windows.h>
@@ -46,6 +70,8 @@ private:
 	int mousey;
 	bool mouseButtons[3];
 	int mouseWheel;
+	int width;
+	int height;
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		Window* canvas = NULL;
@@ -155,8 +181,6 @@ private:
 		}
 	}
 public:
-	int width;
-	int height;
 	void create(int window_width, int window_height, const std::string window_name, float zoom = 1.0f, bool window_fullscreen = false, int window_x = 0, int window_y = 0)
 	{
 		WNDCLASSEX wc;
@@ -177,7 +201,7 @@ public:
 		wc.cbSize = sizeof(WNDCLASSEX);
 		RegisterClassEx(&wc);
 		DWORD style;
-		if (0)//window_fullscreen)
+		if (window_fullscreen)
 		{
 			width = GetSystemMetrics(SM_CXSCREEN);
 			height = GetSystemMetrics(SM_CYSCREEN);
@@ -341,6 +365,14 @@ public:
 		sc->Present(0, 0);
 		pumpLoop();
 	}
+	int getWidth()
+	{
+		return width;
+	}
+	int getHeight()
+	{
+		return height;
+	}
 	bool keyPressed(int key)
 	{
 		return keys[key];
@@ -366,6 +398,24 @@ public:
 		p.y = p.y - rect.top;
 		p.y = (LONG)(p.y * invZoom);
 		return p.y;
+	}
+	void clipMouseToWindow()
+	{
+		RECT rect;
+		GetClientRect(hwnd, &rect);
+		POINT ul;
+		ul.x = rect.left;
+		ul.y = rect.top;
+		POINT lr;
+		lr.x = rect.right;
+		lr.y = rect.bottom;
+		MapWindowPoints(hwnd, nullptr, &ul, 1);
+		MapWindowPoints(hwnd, nullptr, &lr, 1);
+		rect.left = ul.x;
+		rect.top = ul.y;
+		rect.right = lr.x;
+		rect.bottom = lr.y;
+		ClipCursor(&rect);
 	}
 	~Window()
 	{
@@ -401,7 +451,7 @@ public:
 
 class Sound
 {
-public:
+private:
 	XAUDIO2_BUFFER buffer;
 	IXAudio2SourceVoice* sourceVoice[128];
 	int index;
@@ -469,6 +519,7 @@ public:
 			hr = HRESULT_FROM_WIN32(GetLastError());
 		return hr;
 	}
+public:
 	bool loadWAV(IXAudio2* xaudio, std::string filename)
 	{
 		WAVEFORMATEXTENSIBLE wfx = { 0 };
@@ -597,6 +648,28 @@ public:
 	}
 };
 
+class Timer
+{
+private:
+	LARGE_INTEGER freq;
+	LARGE_INTEGER start;
+public:
+	Timer()
+	{
+		QueryPerformanceFrequency(&freq);
+	}
+	void reset()
+	{
+		QueryPerformanceCounter(&start);
+	}
+	float dt()
+	{
+		LARGE_INTEGER cur;
+		QueryPerformanceCounter(&cur);
+		return static_cast<double>(cur.QuadPart - start.QuadPart) / freq.QuadPart;
+	}
+};
+
 class Image
 {
 public:
@@ -705,18 +778,19 @@ public:
 
 class XBoxController
 {
-public:
+private:
 	int ID;
 	XINPUT_STATE state;
-	XBoxController() { ID = -1; }
-	void activate(int _ID) { ID = _ID; }
-	void deactivate() { ID = -1; }
 	float lX;
 	float lY;
 	float rX;
 	float rY;
 	float lT;
 	float rT;
+public:
+	XBoxController() { ID = -1; }
+	void activate(int _ID) { ID = _ID; }
+	void deactivate() { ID = -1; }
 	void update()
 	{
 		memset(&state, 0, sizeof(XINPUT_STATE));
@@ -786,12 +860,17 @@ public:
 		vibration.wRightMotorSpeed = rV;
 		XInputSetState(ID, &vibration);
 	}
+	int getID()
+	{
+		return ID;
+	}
 };
 
 class XBoxControllers
 {
-public:
+private:
 	XBoxController controllers[XUSER_MAX_COUNT];
+public:
 	XBoxControllers()
 	{
 		probeControllers();
@@ -804,7 +883,7 @@ public:
 	{
 		for (int i = 0; i < XUSER_MAX_COUNT; i++)
 		{
-			if (controllers[i].ID > -1)
+			if (controllers[i].getID() > -1)
 			{
 				return controllers[i];
 			}
@@ -814,7 +893,7 @@ public:
 	{
 		for (int i = 0; i < XUSER_MAX_COUNT; i++)
 		{
-			if (controllers[i].ID > -1)
+			if (controllers[i].getID() > -1)
 			{
 				return true;
 			}
