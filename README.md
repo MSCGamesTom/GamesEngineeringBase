@@ -1,6 +1,6 @@
 # GamesEngineeringBase Library Documentation
 
-The **GamesEngineeringBase** library is a collection of utility classes designed to facilitate game development for the MSc Games Engineering course at the University of Warwick. It provides functionality for window management, rendering, audio playback, input handling, and timing. The library is organized within the `GamesEngineeringBase` namespace and is licensed under the MIT License.
+The **GamesEngineeringBase** library is a collection of utility classes designed to facilitate game development in a single header filer. This is designed for the MSc Games Engineering course at the University of Warwick. It provides functionality for window management, rendering, audio playback, input handling, and timing. The library is organized within the `GamesEngineeringBase` namespace and is licensed under the MIT License.
 
 ## Table of Contents
 
