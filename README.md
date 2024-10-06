@@ -54,7 +54,11 @@ The `Window` class manages the creation and handling of a Windows application wi
 - `unsigned char* backBuffer();`
   - Returns a pointer to the back buffer for pixel access.
 - `void draw(int x, int y, unsigned char r, unsigned char g, unsigned char b);`
-  - Draws a pixel at the specified coordinates with the given RGB color.
+  - Draws a pixel at (x, y) with the given RGB color.
+- `void draw(int pixelIndex, unsigned char r, unsigned char g, unsigned char b);`
+  - Draws a pixel at pixelIndex offset with the given RGB color. Note pixelIndex is computed as (y * width) + x.
+- `void draw(int x, int y, unsigned char* pixel);`
+  - Draws a pixel at (x, y) using the color from the provided pixel array.
 - `void clear();`
   - Clears the back buffer.
 - `void present();`
@@ -301,4 +305,4 @@ int main()
 
 ## License
 
-This library is licensed under the MIT License. See the [LICENSE](#) file for details.
+This library is licensed under the MIT License.
