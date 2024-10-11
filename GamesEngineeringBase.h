@@ -75,8 +75,8 @@ namespace GamesEngineeringBase
 		int mousey;                              // Mouse Y-coordinate
 		bool mouseButtons[3];                    // Mouse button states (left, middle, right)
 		int mouseWheel;                          // Mouse wheel value
-		int width;                               // Window width
-		int height;                              // Window height
+		unsigned int width;                      // Window width
+		unsigned int height;                     // Window height
 
 		// Static window procedure to handle window messages
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -120,13 +120,13 @@ namespace GamesEngineeringBase
 			case WM_KEYDOWN:
 			{
 				// Update key state to pressed
-				keys[(unsigned int)wParam] = true;
+				keys[static_cast<unsigned int>(wParam)] = true;
 				return 0;
 			}
 			case WM_KEYUP:
 			{
 				// Update key state to released
-				keys[(unsigned int)wParam] = false;
+				keys[static_cast<unsigned int>(wParam)] = false;
 				return 0;
 			}
 			case WM_LBUTTONDOWN:
@@ -206,7 +206,7 @@ namespace GamesEngineeringBase
 
 	public:
 		// Creates and initializes the window
-		void create(int window_width, int window_height, const std::string window_name, float zoom = 1.0f, bool window_fullscreen = false, int window_x = 0, int window_y = 0)
+		void create(unsigned int window_width, unsigned int window_height, const std::string window_name, float zoom = 1.0f, bool window_fullscreen = false, int window_x = 0, int window_y = 0)
 		{
 			// Window class structure
 			WNDCLASSEX wc;
@@ -258,7 +258,7 @@ namespace GamesEngineeringBase
 			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
 
 			// Adjust window rectangle to accommodate for window borders
-			RECT wr = { 0, 0, (LONG)(width * zoom), (LONG)(height * zoom) };
+			RECT wr = { 0, 0, static_cast<LONG>(width * zoom), static_cast<LONG>(height * zoom) };
 			AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
 			// Create the window
@@ -277,7 +277,7 @@ namespace GamesEngineeringBase
 				this);
 
 			// Calculate inverse zoom factor
-			invZoom = 1.0f / (float)zoom;
+			invZoom = 1.0f / static_cast<float>(zoom);
 
 			// Display and focus the window
 			ShowWindow(hwnd, SW_SHOW);
@@ -308,7 +308,7 @@ namespace GamesEngineeringBase
 				NULL,
 				D3D_DRIVER_TYPE_HARDWARE,
 				NULL,
-				D3D11_CREATE_DEVICE_DEBUG,
+				0,
 				&fl,
 				1,
 				D3D11_SDK_VERSION,
@@ -425,6 +425,10 @@ namespace GamesEngineeringBase
 				NULL);
 			dev->CreatePixelShader(pshader->GetBufferPointer(), pshader->GetBufferSize(), NULL, &ps);
 
+			// Cleanup the shader build data
+			vshader->Release();
+			pshader->Release();
+
 			// Set the shaders and shader resources
 			devcontext->VSSetShader(vs, NULL, 0);
 			devcontext->PSSetShader(ps, NULL, 0);
@@ -516,13 +520,13 @@ namespace GamesEngineeringBase
 		}
 
 		// Returns the window's width
-		int getWidth()
+		unsigned int getWidth()
 		{
 			return width;
 		}
 
 		// Returns the window's height
-		int getHeight()
+		unsigned int getHeight()
 		{
 			return height;
 		}
@@ -542,7 +546,7 @@ namespace GamesEngineeringBase
 			RECT rect;
 			GetClientRect(hwnd, &rect);
 			p.x = p.x - rect.left;
-			p.x = (LONG)(p.x * invZoom);
+			p.x = static_cast<LONG>(p.x * invZoom);
 			return p.x;
 		}
 
@@ -555,7 +559,7 @@ namespace GamesEngineeringBase
 			RECT rect;
 			GetClientRect(hwnd, &rect);
 			p.y = p.y - rect.top;
-			p.y = (LONG)(p.y * invZoom);
+			p.y = static_cast<LONG>(p.y * invZoom);
 			return p.y;
 		}
 
@@ -871,12 +875,13 @@ namespace GamesEngineeringBase
 	};
 
 	// The Image class handles loading and manipulating images
+	// This class is a bit of an exception in that the members are public. The reason for this is users may want to create procedural images.
 	class Image
 	{
 	public:
 		unsigned int width;       // Image width
 		unsigned int height;      // Image height
-		int channels;             // Number of color channels
+		unsigned int channels;             // Number of color channels
 		unsigned char* data;      // Pointer to image data
 
 		// Loads an image from a file using WIC
@@ -959,13 +964,32 @@ namespace GamesEngineeringBase
 		}
 
 		// Returns a pointer to the pixel data at (x, y)
-		unsigned char* at(int x, int y)
+		// Note, there bounds are handled via clamping
+		unsigned char* at(unsigned int x, unsigned int y)
+		{
+			return &data[((min(y, height - 1) * width) + min(x, width  - 1)) * channels];
+		}
+
+		// Returns the alpha value of the pixel at (x, y)
+		unsigned char alphaAt(unsigned int x, unsigned int y)
+		{
+			if (channels == 4)
+			{
+				return data[((min(y, height - 1) * width) + min(x, width - 1)) * channels + 3];
+			}
+			return 255;
+		}
+
+		// Returns a pointer to the pixel data at (x, y)
+		// Note, no checks performed on x and y coordinates
+		unsigned char* atUnchecked(unsigned int x, unsigned int y)
 		{
 			return &data[((y * width) + x) * channels];
 		}
 
 		// Returns the alpha value of the pixel at (x, y)
-		unsigned char alphaAt(int x, int y)
+		// Note, no checks performed on x and y coordinates
+		unsigned char alphaAtUnchecked(unsigned int x, unsigned int y)
 		{
 			if (channels == 4)
 			{
@@ -1069,8 +1093,8 @@ namespace GamesEngineeringBase
 			rY = rY * rLen;
 
 			// Process trigger inputs
-			rT = (float)(state.Gamepad.bRightTrigger - XINPUT_GAMEPAD_TRIGGER_THRESHOLD) / (float)(255 - XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
-			lT = (float)(state.Gamepad.bLeftTrigger - XINPUT_GAMEPAD_TRIGGER_THRESHOLD) / (float)(255 - XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+			rT = static_cast<float>(state.Gamepad.bRightTrigger - XINPUT_GAMEPAD_TRIGGER_THRESHOLD) / static_cast<float>(255 - XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+			lT = static_cast<float>(state.Gamepad.bLeftTrigger - XINPUT_GAMEPAD_TRIGGER_THRESHOLD) / static_cast<float>(255 - XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
 		}
 
 		// Button state methods
@@ -1092,8 +1116,8 @@ namespace GamesEngineeringBase
 		// Sets the vibration intensity for the left and right motors
 		void vibrate(float l, float r)
 		{
-			unsigned short lV = min((unsigned short)(l * 65535), 65535);
-			unsigned short rV = min((unsigned short)(r * 65535), 65535);
+			unsigned short lV = min(static_cast<unsigned short>(l * 65535), 65535);
+			unsigned short rV = min(static_cast<unsigned short>(r * 65535), 65535);
 			XINPUT_VIBRATION vibration;
 			memset(&vibration, 0, sizeof(XINPUT_VIBRATION));
 			vibration.wLeftMotorSpeed = lV;
