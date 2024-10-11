@@ -1,6 +1,6 @@
 # GamesEngineeringBase Library Documentation
 
-The **GamesEngineeringBase** library is a collection of utility classes designed to facilitate game development in a single header file. This is designed for the MSc Games Engineering course at the University of Warwick. It provides functionality for window management, rendering, audio playback, input handling, and timing. The library is organized within the `GamesEngineeringBase` namespace and is licensed under the MIT License.
+The **GamesEngineeringBase** library is a collection of utility classes designed to facilitate game development in a single header file without the need for any external libraries. This is designed for the MSc Games Engineering course at the University of Warwick. It provides functionality for window management, rendering, audio playback, input handling, and timing. The library is organized within the `GamesEngineeringBase` namespace and is licensed under the MIT License.
 
 ## Table of Contents
 
@@ -142,7 +142,7 @@ The `Image` class handles image loading and pixel data manipulation using Window
 
 #### Key Features
 
-- Loading images in various formats (e.g., PNG, JPEG).
+- Loading images in the following formats: PNG, JPEG, BMP, TIFF, DDS.
 - Accessing pixel data with support for different channels.
 - Alpha channel handling for transparency.
 
