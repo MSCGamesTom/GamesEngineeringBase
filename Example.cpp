@@ -45,7 +45,6 @@ int main(int argc, char* argv[])
 
     // Timer object to manage time-based events, such as movement speed
     GamesEngineeringBase::Timer timer;
-    timer.reset(); // Reset the timer at the start of the game.
 
     // Define a move speed for the plane, in this case it is pixels moved per second
     float MOVE_SPEED = 1000.0f;
@@ -65,8 +64,11 @@ int main(int argc, char* argv[])
             break; // Exits the game loop
         }
 
+        // Get the delta time for the frame
+        float dt = timer.dt();
+
         // Calculate how far the plane should move based on elapsed time (ensuring a minimum movement of 1 pixel)
-        unsigned int move_amount = static_cast<unsigned int>(max(MOVE_SPEED * timer.dt(), 1.0f));
+        unsigned int move_amount = static_cast<unsigned int>(max(MOVE_SPEED * dt, 1.0f));
 
         // Control the plane's movement using W, S, A, D keys
         if (canvas.keyPressed('W')) // Move plane up
@@ -119,9 +121,6 @@ int main(int argc, char* argv[])
                 }
             }
         }
-
-        // Reset the timer for the next frame, so movement is smooth and time-based.
-        timer.reset();
 
         // Display the frame on the screen. This must be called once the frame is finished in order to display the frame.
         canvas.present();

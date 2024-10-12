@@ -857,6 +857,7 @@ namespace GamesEngineeringBase
 		Timer()
 		{
 			QueryPerformanceFrequency(&freq);
+			reset();
 		}
 
 		// Resets the timer
@@ -865,11 +866,12 @@ namespace GamesEngineeringBase
 			QueryPerformanceCounter(&start);
 		}
 
-		// Returns the elapsed time since the last reset in seconds
+		// Returns the elapsed time since the last reset in seconds. Note this should only be called once per frame as it resets the timer.
 		float dt()
 		{
 			LARGE_INTEGER cur;
 			QueryPerformanceCounter(&cur);
+			reset();
 			return static_cast<float>(cur.QuadPart - start.QuadPart) / freq.QuadPart;
 		}
 	};

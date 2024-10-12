@@ -134,7 +134,7 @@ The `Timer` class provides high-resolution timing functionality using performanc
 - `void reset();`
   - Resets the timer.
 - `float dt();`
-  - Returns the elapsed time since the last reset in seconds.
+  - Returns the elapsed time since the last call to dt() or reset() in seconds.
 
 ### Image
 
