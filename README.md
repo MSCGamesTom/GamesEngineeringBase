@@ -23,7 +23,7 @@ The **GamesEngineeringBase** library simplifies the setup and management of esse
 
 ## Namespace Overview
 
-All classes are encapsulated within the `GamesEngineeringBase` namespace to prevent naming conflicts and to logically group related functionalities.
+All classes are encapsulated within the `GamesEngineeringBase` namespace to prevent naming conflicts and to logically group the various functionalities.
 
 ```cpp
 namespace GamesEngineeringBase
@@ -68,7 +68,7 @@ The `Window` class manages the creation and handling of a Windows application wi
 - `int getHeight();`
   - Returns the window's height.
 - `bool keyPressed(int key);`
-  - Checks if a specific key is pressed.
+  - Checks if a specific key is pressed. Letter and number keys can be accessed via passing in the appropriate char, i.e. `keyPressed('A')` detects if the A key is pressed. Special keys can be accessed via the [Windows Virtual Key codes](https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes).
 - `int getMouseInWindowX();`
   - Gets the mouse X-coordinate relative to the window.
 - `int getMouseInWindowY();`
