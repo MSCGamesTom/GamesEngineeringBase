@@ -284,8 +284,15 @@ int main()
     window.create(800, 600, "Image Display");
 
     Image image;
-    if (image.load("picture.png"))
+    image.load("picture.png");
+
+    while (true)
     {
+        window.checkInput();
+
+        // Clear the back buffer
+        window.clear();
+
         // Display the image
         for (unsigned int x = 0; x < image.width; x++)
         {
@@ -295,14 +302,9 @@ int main()
                 window.draw(x, y, pixel[0], pixel[1], pixel[2]);
             }
         }
-    }
 
-    window.present();
-
-    // Keep the window open
-    while (true)
-    {
-        window.checkInput();
+        // Present
+        window.present();
     }
 
     return 0;
