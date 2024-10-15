@@ -966,13 +966,14 @@ namespace GamesEngineeringBase
 		}
 
 		// Returns a pointer to the pixel data at (x, y)
-		// Note, there bounds are handled via clamping
+		// Note, the bounds are handled via clamping
 		unsigned char* at(unsigned int x, unsigned int y)
 		{
 			return &data[((min(y, height - 1) * width) + min(x, width  - 1)) * channels];
 		}
 
 		// Returns the alpha value of the pixel at (x, y)
+		// Note, the bounds are handled via clamping
 		unsigned char alphaAt(unsigned int x, unsigned int y)
 		{
 			if (channels == 4)
@@ -980,6 +981,13 @@ namespace GamesEngineeringBase
 				return data[((min(y, height - 1) * width) + min(x, width - 1)) * channels + 3];
 			}
 			return 255;
+		}
+
+		// Returns a the colour specified by index at (x, y)
+		// Note, the image bounds are handled via clamping, but the index is not checked
+		unsigned char at(unsigned int x, unsigned int y, unsigned int index)
+		{
+			return data[(((min(y, height - 1) * width) + min(x, width - 1)) * channels) + index];
 		}
 
 		// Returns a pointer to the pixel data at (x, y)

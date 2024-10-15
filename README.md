@@ -151,9 +151,15 @@ The `Image` class handles image loading and pixel data manipulation using Window
 - `bool load(std::string filename);`
   - Loads an image file.
 - `unsigned char* at(int x, int y);`
-  - Returns a pointer to the pixel data at the specified coordinates.
+  - Returns a pointer to the pixel data at the specified coordinates. These coordinates are clamped to be within image bounds.
 - `unsigned char alphaAt(int x, int y);`
-  - Returns the alpha value of the pixel at the specified coordinates.
+  - Returns the alpha value of the pixel at the specified coordinates. These coordinates are clamped to be within image bounds.
+- `unsigned char at(unsigned int x, unsigned int y, unsigned int index)`
+  - Returns a the colour specified by index at (x, y) coordinates. Index should be between 0 and 2, where 0 == Red, 1 == Green, 2 == Blue
+- `unsigned char* atUnchecked(unsigned int x, unsigned int y)`
+  - Returns the alpha value of the pixel at the specified coordinates. This is faster than `at()` as these coordinates are *not* clamped to be within image bounds.
+- `unsigned char alphaAtUnchecked(unsigned int x, unsigned int y)`
+  - Returns a pointer to the pixel data at the specified coordinates. This is faster than `alphaAt()` as these coordinates are *not* clamped to be within image bounds.
 - `bool hasAlpha();`
   - Checks if the image contains an alpha channel.
 - `void free();`
