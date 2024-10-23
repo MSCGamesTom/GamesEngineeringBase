@@ -871,8 +871,9 @@ namespace GamesEngineeringBase
 		{
 			LARGE_INTEGER cur;
 			QueryPerformanceCounter(&cur);
+			float value = static_cast<float>(cur.QuadPart - start.QuadPart) / freq.QuadPart;
 			reset();
-			return static_cast<float>(cur.QuadPart - start.QuadPart) / freq.QuadPart;
+			return value;
 		}
 	};
 
