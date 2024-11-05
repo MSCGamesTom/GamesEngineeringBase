@@ -51,6 +51,14 @@ namespace GamesEngineeringBase
 #define CANVAS_GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
 #define CANVAS_GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
 
+	// Enum for mouse buttons
+	enum MouseButton
+	{
+		MouseLeft = 0,
+		MouseMiddle = 1,
+		MouseRight = 2
+	};
+
 	// The Window class manages the creation and rendering of a window
 	class Window
 	{
@@ -537,14 +545,10 @@ namespace GamesEngineeringBase
 			return keys[key];
 		}
 
-		// Check if a mouse button is pressed. 0 is left mouse button, 1, is middle mouse button, 2 is right mouse button.
-		bool mouseButtonPressed(unsigned int button)
+		// Check if a mouse button is pressed. Takes a MouseButton enum
+		bool mouseButtonPressed(MouseButton button)
 		{
-			if (button <= 2)
-			{
-				return mouseButtons[button];
-			}
-			return false;
+			return mouseButtons[button];
 		}
 
 		// Returns the mouse x coordinate

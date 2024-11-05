@@ -74,7 +74,7 @@ The `Window` class manages the creation and handling of a Windows application wi
 - `int getMouseInWindowY();`
   - Gets the mouse Y-coordinate relative to the window.
 - `bool mouseButtonPressed(unsigned int button);`
-   - Checks if a specific mouse button is currently pressed. Accepts `0` for the left button, `1` for the middle button, and `2` for the right button.
+   - Checks if a specific mouse button is currently pressed. Accepts one of `MouseButton` enum as an input. That is `MouseLeft` for the left button, `MouseMiddle` for the middle button, and `MouseRight` for the right button.
 - `int getMouseX();`
    - Returns the current X-coordinate of the mouse cursor within the window.
 - `int getMouseY();`
