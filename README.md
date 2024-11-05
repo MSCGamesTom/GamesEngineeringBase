@@ -77,9 +77,9 @@ The `Window` class manages the creation and handling of a Windows application wi
    - Checks if a specific mouse button is currently pressed. Accepts `0` for the left button, `1` for the middle button, and `2` for the right button.
 - `int getMouseX();`
    - Returns the current X-coordinate of the mouse cursor within the window.
-- int getMouseY();`
+- `int getMouseY();`
    - Returns the current Y-coordinate of the mouse cursor within the window.
-- int getMouseWheel();`**
+- `int getMouseWheel();`
    - Returns the mouse wheel’s current scroll value.
 - `void clipMouseToWindow();`
   - Restricts the mouse cursor to the window's client area.
