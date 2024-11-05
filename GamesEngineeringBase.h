@@ -537,6 +537,34 @@ namespace GamesEngineeringBase
 			return keys[key];
 		}
 
+		// Check if a mouse button is pressed. 0 is left mouse button, 1, is middle mouse button, 2 is right mouse button.
+		bool mouseButtonPressed(unsigned int button)
+		{
+			if (button <= 2)
+			{
+				return mouseButtons[button];
+			}
+			return false;
+		}
+
+		// Returns the mouse x coordinate
+		int getMouseX()
+		{
+			return mousex;
+		}
+
+		// Returns the mouse y coordinate
+		int getMouseY()
+		{
+			return mousey;
+		}
+
+		// Returns the mouse wheel value
+		int getMouseWheel()
+		{
+			return mouseWheel;
+		}
+
 		// Gets the mouse X-coordinate relative to the window, accounting for zoom
 		int getMouseInWindowX()
 		{
