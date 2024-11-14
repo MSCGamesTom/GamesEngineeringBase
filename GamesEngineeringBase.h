@@ -205,7 +205,7 @@ namespace GamesEngineeringBase
 		{
 			MSG msg;
 			ZeroMemory(&msg, sizeof(MSG));
-			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
@@ -259,7 +259,7 @@ namespace GamesEngineeringBase
 				// Configure windowed mode settings
 				width = window_width;
 				height = window_height;
-				style = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+				style = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX) | WS_VISIBLE;
 			}
 
 			// Set the process DPI awareness for proper scaling
@@ -267,7 +267,7 @@ namespace GamesEngineeringBase
 
 			// Adjust window rectangle to accommodate for window borders
 			RECT wr = { 0, 0, static_cast<LONG>(width * zoom), static_cast<LONG>(height * zoom) };
-			AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+			AdjustWindowRect(&wr, (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX), FALSE);
 
 			// Create the window
 			hwnd = CreateWindowEx(
