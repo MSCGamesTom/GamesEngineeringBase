@@ -73,7 +73,7 @@ namespace GamesEngineeringBase
 		IDXGISwapChain* sc;                      // Swap chain for double buffering
 		ID3D11RenderTargetView* rtv;             // Render target view
 		D3D11_VIEWPORT vp;                       // Viewport configuration
-		ID3D11Texture2D* tex;                    // Texture for pixel data
+		ID3D11Buffer* buffer;                    // Buffer for pixel data
 		ID3D11ShaderResourceView* srv;           // Shader resource view
 		ID3D11PixelShader* ps;                   // Pixel shader
 		ID3D11VertexShader* vs;                  // Vertex shader
@@ -85,6 +85,7 @@ namespace GamesEngineeringBase
 		int mouseWheel;                          // Mouse wheel value
 		unsigned int width;                      // Window width
 		unsigned int height;                     // Window height
+		unsigned int paddedDataSize;
 
 		// Static window procedure to handle window messages
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -346,28 +347,26 @@ namespace GamesEngineeringBase
 			devcontext->RSSetViewports(1, &vp);
 			devcontext->OMSetRenderTargets(1, &rtv, NULL);
 
-			// Create the texture description for the back buffer image
-			D3D11_TEXTURE2D_DESC texdesc;
-			memset(&texdesc, 0, sizeof(D3D11_TEXTURE2D_DESC));
-			texdesc.Width = width * 3; // Width times 3 for RGB channels
-			texdesc.Height = height;
-			texdesc.MipLevels = 1;
-			texdesc.ArraySize = 1;
-			texdesc.Format = DXGI_FORMAT_R8_UNORM;
-			texdesc.SampleDesc.Count = 1;
-			texdesc.Usage = D3D11_USAGE_DYNAMIC;
-			texdesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-			texdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-			texdesc.MiscFlags = 0;
+			// Calculate padding for GPU alignment
+			unsigned int dataSize = width * height * 3;
+			paddedDataSize = ((dataSize + 3) / 4) * 4;
 
-			// Create the texture and shader resource view
-			dev->CreateTexture2D(&texdesc, NULL, &tex);
-			D3D11_SHADER_RESOURCE_VIEW_DESC srvdesc;
-			srvdesc.Format = DXGI_FORMAT_R8_UNORM;
-			srvdesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-			srvdesc.Texture2D.MostDetailedMip = 0;
-			srvdesc.Texture2D.MipLevels = 1;
-			dev->CreateShaderResourceView(tex, &srvdesc, &srv);
+			// Create buffer to hold the back buffer image
+			D3D11_BUFFER_DESC bufferDesc = {};
+			bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+			bufferDesc.ByteWidth = paddedDataSize * sizeof(unsigned char);
+			bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+			bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+			dev->CreateBuffer(&bufferDesc, nullptr, &buffer);
+
+			//Create shader resource view
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+			srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+			srvDesc.BufferEx.FirstElement = 0;
+			srvDesc.BufferEx.NumElements = paddedDataSize / 4;
+			srvDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+			srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+			dev->CreateShaderResourceView(buffer, &srvDesc, &srv);
 
 			// Set the default states
 			devcontext->OMSetBlendState(NULL, NULL, 0xffffffff);
@@ -389,18 +388,36 @@ namespace GamesEngineeringBase
                 return output;\
             }";
 
-			std::string pixelShader = "Texture2D tex : register(t0);\
+			// Width is fixed so we can write it into the shader code at compile time
+			std::string pixelShader = "ByteAddressBuffer buf : register(t0);\
             struct VSOut\
             {\
                 float4 pos : SV_Position;\
             };\
             float4 PS(VSOut psInput) : SV_Target0\
             {\
-                int3 texcoordsr = int3(psInput.pos.x * 3, psInput.pos.y, 0);\
-                int3 texcoordsg = texcoordsr + int3(1, 0, 0);\
-                int3 texcoordsb = texcoordsr + int3(2, 0, 0);\
-                return float4(tex.Load(texcoordsb).r, tex.Load(texcoordsr).r, tex.Load(texcoordsg).r, 1.0f);\
+				uint pixelIndex = (int(psInput.pos.y) * WIDTH) + int(psInput.pos.x); \
+				uint offset = pixelIndex * 3;\
+				uint inner = offset & 3;\
+				uint baseAddress = offset & ~3;\
+				uint data = 1;\
+				if (inner == 0)\
+				{\
+					data = buf.Load(baseAddress) & 0xFFFFFF;\
+				} else\
+				{\
+					data = ((buf.Load(baseAddress) >> (inner * 8)) | (buf.Load(baseAddress + 4) << ((4 - inner) * 8))) & 0xFFFFFF;\
+				}\
+				float r = (data & 0xFF) / 255.0;\
+				float g = ((data >> 8) & 0xFF) / 255.0; \
+				float b = ((data >> 16) & 0xFF) / 255.0; \
+                return float4(r, g, b, 1.0f);\
             }";
+			unsigned int startPos = 0;
+			std::string widthStr = std::to_string(width);
+			std::string widthConst = "WIDTH";
+			startPos = static_cast<unsigned int>(pixelShader.find(widthConst, startPos));
+			pixelShader.replace(startPos, widthConst.length(), widthStr);
 
 			// Compile the shaders
 			ID3DBlob* vshader;
@@ -443,7 +460,7 @@ namespace GamesEngineeringBase
 			devcontext->PSSetShaderResources(0, 1, &srv);
 
 			// Allocate memory for the back buffer image data
-			image = new unsigned char[width * height * 3];
+			image = new unsigned char[paddedDataSize];
 			clear(); // Clear the image data
 
 			// Initialize input states
@@ -503,15 +520,8 @@ namespace GamesEngineeringBase
 		// Presents the back buffer to the screen
 		void present()
 		{
-			// Map the texture to update its data
-			D3D11_MAPPED_SUBRESOURCE res;
-			devcontext->Map(tex, 0, D3D11_MAP_WRITE_DISCARD, 0, &res);
-
-			// Copy the image data to the texture
-			memcpy(res.pData, image, width * height * 3 * sizeof(unsigned char));
-
-			// Unmap the texture
-			devcontext->Unmap(tex, 0);
+			// Update the texture data
+			devcontext->UpdateSubresource(buffer, 0, nullptr, image, paddedDataSize, 0);
 
 			// Clear the render target view
 			float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f }; // RGBA
@@ -621,7 +631,7 @@ namespace GamesEngineeringBase
 			vs->Release();
 			ps->Release();
 			srv->Release();
-			tex->Release();
+			buffer->Release();
 			rtv->Release();
 			sc->Release();
 			devcontext->Release();
