@@ -43,7 +43,7 @@ SOFTWARE.
 #pragma comment(lib, "WindowsCodecs.lib")
 #pragma comment(lib, "xinput.lib")
 
-// Stop warnings about possible NULL values for backbuffer and buffer. This should work on any modern hardware.
+// Stop warnings about possible NULL values for buffer and backbuffer. This should work on any modern hardware.
 #pragma warning( disable : 6387)
 
 // Define the namespace to encapsulate the library's classes
@@ -553,6 +553,8 @@ namespace GamesEngineeringBase
 		}
 
 		// Provide raw access to back buffer
+		// There are no checks done on this so any writes to this buffer should be within bounds
+		// Can be used for screenshots
 		unsigned char* getBackBuffer()
 		{
 			return image;
