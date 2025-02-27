@@ -43,6 +43,9 @@ SOFTWARE.
 #pragma comment(lib, "WindowsCodecs.lib")
 #pragma comment(lib, "xinput.lib")
 
+// Stop warnings about possible NULL values for backbuffer and buffer. This should work on any modern hardware.
+#pragma warning( disable : 6387)
+
 // Define the namespace to encapsulate the library's classes
 namespace GamesEngineeringBase
 {
@@ -83,9 +86,9 @@ namespace GamesEngineeringBase
 		int mousey;                              // Mouse Y-coordinate
 		bool mouseButtons[3];                    // Mouse button states (left, middle, right)
 		int mouseWheel;                          // Mouse wheel value
-		unsigned int width;                      // Window width
-		unsigned int height;                     // Window height
-		unsigned int paddedDataSize;
+		unsigned int width = 0;                  // Window width
+		unsigned int height = 0;                 // Window height
+		unsigned int paddedDataSize = 0;         // Padding for backbuffer memory allocation
 
 		// Static window procedure to handle window messages
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -264,7 +267,7 @@ namespace GamesEngineeringBase
 			}
 
 			// Set the process DPI awareness for proper scaling
-			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
 
 			// Adjust window rectangle to accommodate for window borders
 			RECT wr = { 0, 0, static_cast<LONG>(width * zoom), static_cast<LONG>(height * zoom) };
@@ -549,6 +552,12 @@ namespace GamesEngineeringBase
 			return height;
 		}
 
+		// Provide raw access to back buffer
+		unsigned char* getBackBuffer()
+		{
+			return image;
+		}
+
 		// Checks if a specific key is currently pressed
 		bool keyPressed(int key)
 		{
@@ -758,7 +767,7 @@ namespace GamesEngineeringBase
 			DWORD filetype;
 			ReadChunkData(hFile, &filetype, sizeof(DWORD), dwChunkPosition);
 			if (filetype != fourccWAVE)
-				return S_FALSE;
+				return FALSE;
 
 			// Read the 'fmt ' chunk to get the format
 			FindChunk(hFile, fourccFMT, dwChunkSize, dwChunkPosition);
@@ -822,7 +831,7 @@ namespace GamesEngineeringBase
 		IXAudio2* xaudio;                          // XAudio2 interface
 		IXAudio2MasteringVoice* xaudioMasterVoice; // Mastering voice
 		std::map<std::string, Sound*> sounds;      // Map of sounds
-		Sound* music;                              // Music sound
+		Sound* music = NULL;                              // Music sound
 
 		// Helper function to find a sound by filename
 		Sound* find(std::string filename)
@@ -933,7 +942,7 @@ namespace GamesEngineeringBase
 		bool load(std::string filename)
 		{
 			CComPtr<IWICImagingFactory> factory;
-			factory.CoCreateInstance(CLSID_WICImagingFactory);
+			HRESULT hr = factory.CoCreateInstance(CLSID_WICImagingFactory);
 
 			CComPtr<IWICBitmapDecoder> decoder;
 			IWICStream* stream = NULL;
@@ -1078,14 +1087,14 @@ namespace GamesEngineeringBase
 	class XBoxController
 	{
 	private:
-		int ID;                 // Controller ID
-		XINPUT_STATE state;     // Current state of the controller
-		float lX;               // Left thumbstick X-axis value
-		float lY;               // Left thumbstick Y-axis value
-		float rX;               // Right thumbstick X-axis value
-		float rY;               // Right thumbstick Y-axis value
-		float lT;               // Left trigger value
-		float rT;               // Right trigger value
+		int ID = 0;                 // Controller ID
+		XINPUT_STATE state = {};    // Current state of the controller
+		float lX = 0;               // Left thumbstick X-axis value
+		float lY = 0;               // Left thumbstick Y-axis value
+		float rX = 0;               // Right thumbstick X-axis value
+		float rY = 0;               // Right thumbstick Y-axis value
+		float lT = 0;               // Left trigger value
+		float rT = 0;               // Right trigger value
 
 	public:
 		// Constructor initializes the controller as inactive
