@@ -33,7 +33,7 @@ SOFTWARE.
 #include <map>
 #include <wincodec.h>
 #include <wincodecsdk.h>
-#include <atlbase.h>
+#include <wrl/client.h>
 #include <Xinput.h>
 #include <math.h>
 
@@ -69,7 +69,6 @@ namespace GamesEngineeringBase
 		// Private member variables
 		HWND hwnd;                               // Handle to the window
 		HINSTANCE hinstance;                     // Handle to the application instance
-		float invZoom;                           // Inverse of the zoom factor
 		std::string name;                        // Window name/title
 		ID3D11Device* dev;                       // Direct3D device
 		ID3D11DeviceContext* devcontext;         // Direct3D device context
@@ -218,7 +217,7 @@ namespace GamesEngineeringBase
 
 	public:
 		// Creates and initializes the window
-		void create(unsigned int window_width, unsigned int window_height, const std::string window_name, float zoom = 1.0f, bool window_fullscreen = false, int window_x = 0, int window_y = 0)
+		void create(unsigned int window_width, unsigned int window_height, const std::string window_name, bool window_fullscreen = false, int window_x = 0, int window_y = 0)
 		{
 			// Window class structure
 			WNDCLASSEX wc;
@@ -263,15 +262,15 @@ namespace GamesEngineeringBase
 				// Configure windowed mode settings
 				width = window_width;
 				height = window_height;
-				style = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX) | WS_VISIBLE;
+				style = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX) | WS_VISIBLE;
 			}
 
 			// Set the process DPI awareness for proper scaling
 			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
 
 			// Adjust window rectangle to accommodate for window borders
-			RECT wr = { 0, 0, static_cast<LONG>(width * zoom), static_cast<LONG>(height * zoom) };
-			AdjustWindowRect(&wr, (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX), FALSE);
+			RECT wr = { 0, 0, static_cast<LONG>(width), static_cast<LONG>(height) };
+			AdjustWindowRect(&wr, (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX), FALSE);
 
 			// Create the window
 			hwnd = CreateWindowEx(
@@ -287,9 +286,6 @@ namespace GamesEngineeringBase
 				NULL,
 				hinstance,
 				this);
-
-			// Calculate inverse zoom factor
-			invZoom = 1.0f / static_cast<float>(zoom);
 
 			// Display and focus the window
 			ShowWindow(hwnd, SW_SHOW);
@@ -482,7 +478,7 @@ namespace GamesEngineeringBase
 		}
 
 		// Returns a pointer to the back buffer image data
-		unsigned char* backBuffer()
+		unsigned char* backBuffer() const
 		{
 			return image;
 		}
@@ -541,13 +537,13 @@ namespace GamesEngineeringBase
 		}
 
 		// Returns the window's width
-		unsigned int getWidth()
+		unsigned int getWidth() const
 		{
 			return width;
 		}
 
 		// Returns the window's height
-		unsigned int getHeight()
+		unsigned int getHeight() const
 		{
 			return height;
 		}
@@ -555,43 +551,43 @@ namespace GamesEngineeringBase
 		// Provide raw access to back buffer
 		// There are no checks done on this so any writes to this buffer should be within bounds
 		// Can be used for screenshots
-		unsigned char* getBackBuffer()
+		unsigned char* getBackBuffer() const
 		{
 			return image;
 		}
 
 		// Checks if a specific key is currently pressed
-		bool keyPressed(int key)
+		bool keyPressed(int key) const
 		{
 			return keys[key];
 		}
 
 		// Check if a mouse button is pressed. Takes a MouseButton enum
-		bool mouseButtonPressed(MouseButton button)
+		bool mouseButtonPressed(MouseButton button) const
 		{
 			return mouseButtons[button];
 		}
 
 		// Returns the mouse x coordinate
-		int getMouseX()
+		int getMouseX() const
 		{
 			return mousex;
 		}
 
 		// Returns the mouse y coordinate
-		int getMouseY()
+		int getMouseY() const
 		{
 			return mousey;
 		}
 
 		// Returns the mouse wheel value
-		int getMouseWheel()
+		int getMouseWheel() const
 		{
 			return mouseWheel;
 		}
 
 		// Gets the mouse X-coordinate relative to the window, accounting for zoom
-		int getMouseInWindowX()
+		int getMouseInWindowX() const
 		{
 			POINT p;
 			GetCursorPos(&p);
@@ -599,12 +595,12 @@ namespace GamesEngineeringBase
 			RECT rect;
 			GetClientRect(hwnd, &rect);
 			p.x = p.x - rect.left;
-			p.x = static_cast<LONG>(p.x * invZoom);
+			p.x = static_cast<LONG>(p.x);
 			return p.x;
 		}
 
 		// Gets the mouse Y-coordinate relative to the window, accounting for zoom
-		int getMouseInWindowY()
+		int getMouseInWindowY() const
 		{
 			POINT p;
 			GetCursorPos(&p);
@@ -612,12 +608,12 @@ namespace GamesEngineeringBase
 			RECT rect;
 			GetClientRect(hwnd, &rect);
 			p.y = p.y - rect.top;
-			p.y = static_cast<LONG>(p.y * invZoom);
+			p.y = static_cast<LONG>(p.y);
 			return p.y;
 		}
 
 		// Restricts the mouse cursor to the window's client area
-		void clipMouseToWindow()
+		void clipMouseToWindow() const
 		{
 			RECT rect;
 			GetClientRect(hwnd, &rect);
@@ -937,16 +933,33 @@ namespace GamesEngineeringBase
 	public:
 		unsigned int width;       // Image width
 		unsigned int height;      // Image height
-		unsigned int channels;             // Number of color channels
+		unsigned int channels;    // Number of color channels
 		unsigned char* data;      // Pointer to image data
+
+		// Default constructor
+		Image()
+		{
+			width = 0;
+			height = 0;
+			channels = 0;
+			data = nullptr;
+		}
+		Image(const Image&) = delete; // No copy constructor
+		Image& operator=(const Image&) = delete;
+		Image(Image&&) noexcept = default;  // Default move
+		Image& operator=(Image&&) noexcept = default;
 
 		// Loads an image from a file using WIC
 		bool load(std::string filename)
 		{
-			CComPtr<IWICImagingFactory> factory;
-			HRESULT hr = factory.CoCreateInstance(CLSID_WICImagingFactory);
+			Microsoft::WRL::ComPtr<IWICImagingFactory> factory;
+			HRESULT hr = ::CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
+			if (FAILED(hr))
+			{
+				return false;
+			}
 
-			CComPtr<IWICBitmapDecoder> decoder;
+			Microsoft::WRL::ComPtr<IWICBitmapDecoder> decoder;
 			IWICStream* stream = NULL;
 			factory->CreateStream(&stream);
 
@@ -954,7 +967,7 @@ namespace GamesEngineeringBase
 			stream->InitializeFromFilename(wFilename.c_str(), GENERIC_READ);
 			factory->CreateDecoderFromStream(stream, 0, WICDecodeMetadataCacheOnDemand, &decoder);
 
-			CComPtr<IWICBitmapFrameDecode> frame;
+			Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
 			decoder->GetFrame(0, &frame);
 
 			frame->GetSize(&width, &height);
@@ -1021,14 +1034,14 @@ namespace GamesEngineeringBase
 
 		// Returns a pointer to the pixel data at (x, y)
 		// Note, the bounds are handled via clamping
-		unsigned char* at(unsigned int x, unsigned int y)
+		unsigned char* at(const unsigned int x, const unsigned int y) const
 		{
 			return &data[((min(y, height - 1) * width) + min(x, width  - 1)) * channels];
 		}
 
 		// Returns the alpha value of the pixel at (x, y)
 		// Note, the bounds are handled via clamping
-		unsigned char alphaAt(unsigned int x, unsigned int y)
+		unsigned char alphaAt(const unsigned int x, const unsigned int y) const
 		{
 			if (channels == 4)
 			{
@@ -1039,21 +1052,21 @@ namespace GamesEngineeringBase
 
 		// Returns a the colour specified by index at (x, y)
 		// Note, the image bounds are handled via clamping, but the index is not checked
-		unsigned char at(unsigned int x, unsigned int y, unsigned int index)
+		unsigned char at(const unsigned int x, const unsigned int y, const unsigned int index) const
 		{
 			return data[(((min(y, height - 1) * width) + min(x, width - 1)) * channels) + index];
 		}
 
 		// Returns a pointer to the pixel data at (x, y)
 		// Note, no checks performed on x and y coordinates
-		unsigned char* atUnchecked(unsigned int x, unsigned int y)
+		unsigned char* atUnchecked(const unsigned int x, const unsigned int y) const
 		{
 			return &data[((y * width) + x) * channels];
 		}
 
 		// Returns the alpha value of the pixel at (x, y)
 		// Note, no checks performed on x and y coordinates
-		unsigned char alphaAtUnchecked(unsigned int x, unsigned int y)
+		unsigned char alphaAtUnchecked(const unsigned int x, const unsigned int y) const
 		{
 			if (channels == 4)
 			{
@@ -1063,7 +1076,7 @@ namespace GamesEngineeringBase
 		}
 
 		// Checks if the image has an alpha channel
-		bool hasAlpha()
+		bool hasAlpha() const
 		{
 			return channels == 4;
 		}
