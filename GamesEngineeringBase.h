@@ -820,6 +820,24 @@ namespace GamesEngineeringBase
 			sourceVoice[index]->SubmitSourceBuffer(&buffer);
 			sourceVoice[index]->Start(0);
 		}
+
+		~Sound()
+		{
+			delete[] buffer.pAudioData;
+			for (int i = 0; i < 128; i++)
+			{
+				if (sourceVoice[i])
+				{
+					sourceVoice[i]->DestroyVoice();
+				}
+			}
+		}
+
+		Sound() = default;
+		Sound(const Sound&) = delete;
+		Sound& operator=(const Sound&) = delete;
+		Sound(Sound&&) = delete;
+		Sound& operator=(Sound&&) = delete;
 	};
 
 	// The SoundManager class manages multiple Sound instances
@@ -944,10 +962,41 @@ namespace GamesEngineeringBase
 			channels = 0;
 			data = nullptr;
 		}
-		Image(const Image&) = delete; // No copy constructor
+
+		// Move constructor
+		Image(Image&& other)
+		{
+			width = other.width;
+			height = other.height;
+			channels = other.channels;
+			data = other.data;
+			other.width = 0;
+			other.height = 0;
+			other.channels = 0;
+			other.data = nullptr;
+		}
+
+		// Move assignment
+		Image& operator=(Image&& other)
+		{
+			if (this != &other)
+			{
+				free();
+				width = other.width;
+				height = other.height;
+				channels = other.channels;
+				data = other.data;
+				other.width = 0;
+				other.height = 0;
+				other.channels = 0;
+				other.data = nullptr;
+			}
+			return *this;
+		}
+
+		// Remove copy constructors
+		Image(const Image&) = delete;
 		Image& operator=(const Image&) = delete;
-		Image(Image&&) noexcept = default;  // Default move
-		Image& operator=(Image&&) noexcept = default;
 
 		// Loads an image from a file using WIC
 		bool load(std::string filename)
@@ -1131,8 +1180,15 @@ namespace GamesEngineeringBase
 			lX = state.Gamepad.sThumbLX;
 			lY = state.Gamepad.sThumbLY;
 			float lLen = sqrtf((lX * lX) + (lY * lY));
-			lX = lX / lLen;
-			lY = lY / lLen;
+			if (lLen > 0)
+			{
+				lX = lX / lLen;
+				lY = lY / lLen;
+			} else
+			{
+				lX = 0;
+				lY = 0;
+			}
 			if (lLen > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
 			{
 				if (lLen > 32767)
