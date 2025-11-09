@@ -47,11 +47,11 @@ The `Window` class manages the creation and handling of a Windows application wi
 
 #### Public Methods
 
-- `void create(int window_width, int window_height, const std::string window_name, float zoom = 1.0f, bool window_fullscreen = false, int window_x = 0, int window_y = 0);`
+- `void create(unsigned int window_width, unsigned int window_height, const std::string window_name, bool window_fullscreen = false, int window_x = 0, int window_y = 0);`
   - Initializes and creates the window with specified parameters.
 - `void checkInput();`
   - Processes pending input messages.
-- `unsigned char* backBuffer();`
+- `unsigned char* backBuffer() const;`
   - Returns a pointer to the back buffer for pixel access.
 - `void draw(int x, int y, unsigned char r, unsigned char g, unsigned char b);`
   - Draws a pixel at (x, y) with the given RGB color.
@@ -63,26 +63,32 @@ The `Window` class manages the creation and handling of a Windows application wi
   - Clears the back buffer.
 - `void present();`
   - Presents the back buffer to the screen.
-- `int getWidth();`
+- `unsigned int getWidth() const;`
   - Returns the window's width.
-- `int getHeight();`
+- `unsigned int getHeight() const;`
   - Returns the window's height.
-- `bool keyPressed(int key);`
+- `bool keyPressed(int key) const;`
   - Checks if a specific key is pressed. Letter and number keys can be accessed via passing in the appropriate char, i.e. `keyPressed('A')` detects if the A key is pressed. Special keys can be accessed via the [Windows Virtual Key codes](https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes).
-- `int getMouseInWindowX();`
+- `bool mouseButtonPressed(MouseButton button) const;`
+  - Checks if a specific mouse button is currently pressed. Accepts one of `MouseButton` enum as an input. That is `MouseLeft` for the left button, `MouseMiddle` for the middle button, and `MouseRight` for the right button.
+- `MouseButtonState mouseButtonState(MouseButton button) const;`
+  - Returns the current state of a mouse button (`MouseUp`, `MouseDown`, or `MousePressed`).
+- `int getMouseX() const;`
+  - Returns the current X-coordinate of the mouse cursor within the window.
+- `int getMouseY() const;`
+  - Returns the current Y-coordinate of the mouse cursor within the window.
+- `int getMouseWheel() const;`
+  - Returns the mouse wheelâ€™s current scroll value.
+- `void resetMouseWheelPosition();`
+  - Resets the mouse wheel scroll value to 0.
+- `int getMouseInWindowX() const;`
   - Gets the mouse X-coordinate relative to the window.
-- `int getMouseInWindowY();`
+- `int getMouseInWindowY() const;`
   - Gets the mouse Y-coordinate relative to the window.
-- `bool mouseButtonPressed(unsigned int button);`
-   - Checks if a specific mouse button is currently pressed. Accepts one of `MouseButton` enum as an input. That is `MouseLeft` for the left button, `MouseMiddle` for the middle button, and `MouseRight` for the right button.
-- `int getMouseX();`
-   - Returns the current X-coordinate of the mouse cursor within the window.
-- `int getMouseY();`
-   - Returns the current Y-coordinate of the mouse cursor within the window.
-- `int getMouseWheel();`
-   - Returns the mouse wheel�s current scroll value.
-- `void clipMouseToWindow();`
+- `void clipMouseToWindow() const;`
   - Restricts the mouse cursor to the window's client area.
+- `unsigned char* getBackBuffer() const;`
+  - Returns a pointer to the raw back buffer data for low-level access or screenshots.
 
 ### Sound
 
@@ -158,17 +164,17 @@ The `Image` class handles image loading and pixel data manipulation using Window
 
 - `bool load(std::string filename);`
   - Loads an image file.
-- `unsigned char* at(int x, int y);`
+- `unsigned char* at(unsigned int x, unsigned int y) const;`
   - Returns a pointer to the pixel data at the specified coordinates. These coordinates are clamped to be within image bounds.
-- `unsigned char alphaAt(int x, int y);`
+- `unsigned char alphaAt(unsigned int x, unsigned int y) const;`
   - Returns the alpha value of the pixel at the specified coordinates. These coordinates are clamped to be within image bounds.
-- `unsigned char at(unsigned int x, unsigned int y, unsigned int index)`
-  - Returns a the colour specified by index at (x, y) coordinates. Index should be between 0 and 2, where 0 == Red, 1 == Green, 2 == Blue
-- `unsigned char* atUnchecked(unsigned int x, unsigned int y)`
-  - Returns the alpha value of the pixel at the specified coordinates. This is faster than `at()` as these coordinates are *not* clamped to be within image bounds.
-- `unsigned char alphaAtUnchecked(unsigned int x, unsigned int y)`
-  - Returns a pointer to the pixel data at the specified coordinates. This is faster than `alphaAt()` as these coordinates are *not* clamped to be within image bounds.
-- `bool hasAlpha();`
+- `unsigned char at(unsigned int x, unsigned int y, unsigned int index) const;`
+  - Returns the color specified by index at (x, y) coordinates. Index should be between 0 and 2, where 0 == Red, 1 == Green, 2 == Blue.
+- `unsigned char* atUnchecked(unsigned int x, unsigned int y) const;`
+  - Returns a pointer to the pixel data at the specified coordinates. This is faster than `at()` as these coordinates are *not* clamped to be within image bounds.
+- `unsigned char alphaAtUnchecked(unsigned int x, unsigned int y) const;`
+  - Returns the alpha value of the pixel at the specified coordinates. This is faster than `alphaAt()` as these coordinates are *not* clamped to be within image bounds.
+- `bool hasAlpha() const;`
   - Checks if the image contains an alpha channel.
 - `void free();`
   - Frees the allocated image data.
@@ -197,6 +203,8 @@ The `XBoxController` class represents a single Xbox controller and provides meth
 - Button state methods like `bool APressed();`, `bool BPressed();`, etc.
 - `void vibrate(float l, float r);`
   - Sets the vibration intensity for the left and right motors.
+- `int getID();`
+  - Returns the controller ID.
 
 ### XBoxControllers
 
