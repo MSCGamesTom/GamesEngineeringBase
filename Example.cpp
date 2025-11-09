@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
         float dt = timer.dt();
 
         // Calculate how far the plane should move based on elapsed time (ensuring a minimum movement of 1 pixel)
-        unsigned int move_amount = static_cast<unsigned int>(max(MOVE_SPEED * dt, 1.0f));
+        unsigned int move_amount = static_cast<unsigned int>(std::max(MOVE_SPEED * dt, 1.0f));
 
         // Control the plane's movement using W, S, A, D keys
         if (canvas.keyPressed('W')) // Move plane up
