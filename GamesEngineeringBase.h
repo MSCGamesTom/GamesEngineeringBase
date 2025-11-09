@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 // Include necessary Windows and DirectX headers
+#define NOMINMAX
 #include <Windows.h>
 #include <string>
 #include <D3D11.h>
@@ -36,6 +37,7 @@ SOFTWARE.
 #include <wrl/client.h>
 #include <Xinput.h>
 #include <math.h>
+#include <algorithm>
 
 // Link necessary libraries
 #pragma comment(lib, "D3D11.lib")
@@ -62,6 +64,14 @@ namespace GamesEngineeringBase
 		MouseRight = 2
 	};
 
+	// Enum for button states
+	enum MouseButtonState
+	{
+		MouseUp = 0,
+		MouseDown = 1,
+		MousePressed = 2
+	};
+
 	// The Window class manages the creation and rendering of a window
 	class Window
 	{
@@ -83,7 +93,7 @@ namespace GamesEngineeringBase
 		bool keys[256];                          // Keyboard state array
 		int mousex;                              // Mouse X-coordinate
 		int mousey;                              // Mouse Y-coordinate
-		bool mouseButtons[3];                    // Mouse button states (left, middle, right)
+		MouseButtonState buttonStates[3];		 // Mouse button states
 		int mouseWheel;                          // Mouse wheel value
 		unsigned int width = 0;                  // Window width
 		unsigned int height = 0;                 // Window height
@@ -118,6 +128,13 @@ namespace GamesEngineeringBase
 		// Instance-specific window procedure to handle messages
 		LRESULT CALLBACK realWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
+			for (int i = 0; i < 3; i++)
+			{
+				if (buttonStates[i] == MouseDown)
+				{
+					buttonStates[i] = MousePressed;
+				}
+			}
 			switch (msg)
 			{
 			case WM_DESTROY:
@@ -144,42 +161,42 @@ namespace GamesEngineeringBase
 			{
 				// Handle left mouse button down
 				updateMouse(CANVAS_GET_X_LPARAM(lParam), CANVAS_GET_Y_LPARAM(lParam));
-				mouseButtons[0] = true;
+				buttonStates[0] = MouseDown;
 				return 0;
 			}
 			case WM_LBUTTONUP:
 			{
 				// Handle left mouse button up
 				updateMouse(CANVAS_GET_X_LPARAM(lParam), CANVAS_GET_Y_LPARAM(lParam));
-				mouseButtons[0] = false;
+				buttonStates[0] = MouseUp;
 				return 0;
 			}
 			case WM_RBUTTONDOWN:
 			{
 				// Handle right mouse button down
 				updateMouse(CANVAS_GET_X_LPARAM(lParam), CANVAS_GET_Y_LPARAM(lParam));
-				mouseButtons[2] = true;
+				buttonStates[2] = MouseDown;
 				return 0;
 			}
 			case WM_RBUTTONUP:
 			{
 				// Handle right mouse button up
 				updateMouse(CANVAS_GET_X_LPARAM(lParam), CANVAS_GET_Y_LPARAM(lParam));
-				mouseButtons[2] = false;
+				buttonStates[2] = MouseUp;
 				return 0;
 			}
 			case WM_MBUTTONDOWN:
 			{
 				// Handle middle mouse button down
 				updateMouse(CANVAS_GET_X_LPARAM(lParam), CANVAS_GET_Y_LPARAM(lParam));
-				mouseButtons[1] = true;
+				buttonStates[1] = MouseDown;
 				return 0;
 			}
 			case WM_MBUTTONUP:
 			{
 				// Handle middle mouse button up
 				updateMouse(CANVAS_GET_X_LPARAM(lParam), CANVAS_GET_Y_LPARAM(lParam));
-				mouseButtons[1] = false;
+				buttonStates[1] = MouseUp;
 				return 0;
 			}
 			case WM_MOUSEWHEEL:
@@ -464,7 +481,10 @@ namespace GamesEngineeringBase
 
 			// Initialize input states
 			memset(keys, 0, 256 * sizeof(bool));
-			memset(mouseButtons, 0, 3 * sizeof(bool));
+			for (int i = 0; i < 3; i++)
+			{
+				buttonStates[i] = MouseUp;
+			}
 
 			// Initialize COM library for image loading
 			HRESULT comResult;
@@ -565,7 +585,13 @@ namespace GamesEngineeringBase
 		// Check if a mouse button is pressed. Takes a MouseButton enum
 		bool mouseButtonPressed(MouseButton button) const
 		{
-			return mouseButtons[button];
+			return (buttonStates[button] == MouseDown || buttonStates[button] == MousePressed);
+		}
+
+		// Check mouse button is state. Takes a MouseButton enum
+		MouseButtonState mouseButtonState(MouseButton button) const
+		{
+			return buttonStates[button];
 		}
 
 		// Returns the mouse x coordinate
@@ -584,6 +610,12 @@ namespace GamesEngineeringBase
 		int getMouseWheel() const
 		{
 			return mouseWheel;
+		}
+
+		// Reset the mouse wheel
+		void resetMouseWheelPosition()
+		{
+			mouseWheel = 0;
 		}
 
 		// Gets the mouse X-coordinate relative to the window, accounting for zoom
@@ -1085,7 +1117,7 @@ namespace GamesEngineeringBase
 		// Note, the bounds are handled via clamping
 		unsigned char* at(const unsigned int x, const unsigned int y) const
 		{
-			return &data[((min(y, height - 1) * width) + min(x, width  - 1)) * channels];
+			return &data[((std::min(y, height - 1) * width) + std::min(x, width  - 1)) * channels];
 		}
 
 		// Returns the alpha value of the pixel at (x, y)
@@ -1094,7 +1126,7 @@ namespace GamesEngineeringBase
 		{
 			if (channels == 4)
 			{
-				return data[((min(y, height - 1) * width) + min(x, width - 1)) * channels + 3];
+				return data[((std::min(y, height - 1) * width) + std::min(x, width - 1)) * channels + 3];
 			}
 			return 255;
 		}
@@ -1103,7 +1135,7 @@ namespace GamesEngineeringBase
 		// Note, the image bounds are handled via clamping, but the index is not checked
 		unsigned char at(const unsigned int x, const unsigned int y, const unsigned int index) const
 		{
-			return data[(((min(y, height - 1) * width) + min(x, width - 1)) * channels) + index];
+			return data[(((std::min(y, height - 1) * width) + std::min(x, width - 1)) * channels) + index];
 		}
 
 		// Returns a pointer to the pixel data at (x, y)
@@ -1249,8 +1281,8 @@ namespace GamesEngineeringBase
 		// Sets the vibration intensity for the left and right motors
 		void vibrate(float l, float r)
 		{
-			unsigned short lV = min(static_cast<unsigned short>(l * 65535), 65535);
-			unsigned short rV = min(static_cast<unsigned short>(r * 65535), 65535);
+			unsigned short lV = std::min(static_cast<unsigned short>(l * 65535), static_cast<unsigned short>(65535));
+			unsigned short rV = std::min(static_cast<unsigned short>(r * 65535), static_cast<unsigned short>(65535));
 			XINPUT_VIBRATION vibration;
 			memset(&vibration, 0, sizeof(XINPUT_VIBRATION));
 			vibration.wLeftMotorSpeed = lV;
