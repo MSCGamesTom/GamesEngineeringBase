@@ -1051,6 +1051,8 @@ namespace GamesEngineeringBase
 			Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
 			decoder->GetFrame(0, &frame);
 
+			stream->Release();
+
 			frame->GetSize(&width, &height);
 			WICPixelFormatGUID pixelFormat = { 0 };
 			frame->GetPixelFormat(&pixelFormat);
